@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>English Mastery - Premium App</title>
+<style>
+  :root { --bg:#0a0a0a; --card:#161616; --gold:#d4af37; --gold-light:#f4e4a6; --text:#f5f5f5; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; max-width:430px; margin:0 auto; min-height:100vh; }
+  @media (orientation:landscape) and (max-height:500px) { body{max-width:100%;} .bottom-nav{padding:8px 0 12px;} }
+  .status-bar { height:44px; display:flex; justify-content:space-between; align-items:center; padding:0 20px; font-size:14px; font-weight:600; }
+  .header { padding:10px 20px 20px; }
+  .user-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+  .avatar { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#d4af37,#b8860b); display:flex; align-items:center; justify-content:center; font-weight:bold; color:#000; border:2px solid var(--gold); }
+  .badge { background:#222; padding:6px 14px; border-radius:20px; font-size:13px; border:1px solid #333; }
+  .streak { color:var(--gold); font-weight:600; }
+  h1 { font-size:34px; font-weight:600; color:var(--gold-light); margin:8px 0 4px; }
+  .subtitle { color:#aaa; font-size:15px; margin-bottom:20px; }
+  .section-title { display:flex; justify-content:space-between; align-items:center; margin:28px 20px 16px; font-size:18px; font-weight:600; }
+  .view-all { color:var(--gold); font-size:14px; cursor:pointer; }
+  .courses { display:flex; gap:12px; overflow-x:auto; padding:0 20px 10px; scrollbar-width:none; }
+  .courses::-webkit-scrollbar { display:none; }
+  .course-card { min-width:150px; background:var(--card); border-radius:20px; padding:18px 16px; border:1px solid #222; cursor:pointer; }
+  .course-card:active { transform:scale(0.97); border-color:var(--gold); }
+  .course-card .icon { font-size:28px; margin-bottom:12px; }
+  .course-card h3 { font-size:15px; margin-bottom:8px; line-height:1.3; }
+  .progress-bar { height:4px; background:#333; border-radius:2px; margin-top:10px; }
+  .progress-fill { height:100%; background:var(--gold); border-radius:2px; }
+  .premium-banner { margin:20px; background:linear-gradient(135deg,#1a1a1a,#222); border:1px solid #333; border-radius:20px; padding:20px; display:flex; align-items:center; gap:16px; }
+  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:#111; border-top:1px solid #222; display:flex; justify-content:space-around; padding:12px 0 28px; z-index:100; }
+  .nav-item { text-align:center; font-size:11px; color:#666; cursor:pointer; }
+  .nav-item.active { color:var(--gold); }
+  .nav-item .icon { font-size:22px; margin-bottom:4px; }
+  .screen { display:none; padding-bottom:110px; }
+  .screen.active { display:block; }
+  .course-list { padding:0 20px; }
+  .course-item { background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; border:1px solid #222; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+  .lessons { font-size:12px; color:var(--gold); margin-top:4px; }
+  .btn-gold { width:100%; margin-top:16px; background:linear-gradient(90deg,#d4af37,#b8860b); color:#000; border:none; padding:16px; border-radius:30px; font-size:16px; font-weight:700; cursor:pointer; }
+  .lesson-modal { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+  .lesson-modal.active { display:flex; }
+  .modal-content { background:var(--card); border-radius:20px; padding:24px; max-width:380px; width:100%; border:1px solid #333; }
+</style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+
+  <div class="screen active" id="home">
+    <div class="header">
+      <div class="user-row">
+        <div style="display:flex;align-items:center;gap:12px;"><div class="avatar">P</div><div class="badge">Package 0</div></div>
+        <div class="streak">🔥 12 days</div>
+      </div>
+      <h1>Welcome back</h1>
+      <p class="subtitle">Let's continue your English journey.</p>
+    </div>
+    <div class="section-title"><span>Continue Learning</span><span class="view-all" onclick="showScreen('courses')">View all ›</span></div>
+    <div class="courses" id="continueCourses"></div>
+    <div class="premium-banner">
+      <div style="font-size:40px;">👑</div>
+      <div><h3 style="color:var(--gold);">Premium Path</h3><p style="font-size:13px;color:#aaa;margin-top:4px;">Unlock advanced courses & personalized learning.</p></div>
+      <div style="font-size:32px;margin-left:auto;">🛡️</div>
+    </div>
+  </div>
+
+  <div class="screen" id="courses">
+    <div style="padding:20px 20px 10px;display:flex;align-items:center;gap:12px;">
+      <span onclick="showScreen('home')" style="font-size:24px;cursor:pointer;">←</span>
+      <h2 style="font-size:22px;">All Courses</h2>
+    </div>
+    <div class="course-list" id="allCoursesList"></div>
+  </div>
+
+  <div class="screen" id="course">
+    <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center;">
+      <span onclick="showScreen('courses')" style="font-size:24px;cursor:pointer;">←</span>
+      <span style="color:var(--gold);font-size:12px;letter-spacing:2px;">ENGLISH MASTERY</span>
+      <span>🔖</span>
+    </div>
+    <div id="courseContent" style="padding:10px 20px 20px;"></div>
+  </div>
+
+  <div class="screen" id="practice">
+    <div style="padding:40px 20px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:16px;">🎤</div>
+      <h2 style="color:var(--gold);margin-bottom:10px;">Practice</h2>
+      <p style="color:#888;">Vocabulary & Grammar practice coming soon.</p>
+    </div>
+  </div>
+
+  <div class="screen" id="profile">
+    <div style="padding:40px 20px;text-align:center;">
+      <div class="avatar" style="width:80px;height:80px;margin:0 auto 16px;font-size:32px;">P</div>
+      <h2>Package 0</h2>
+      <p style="color:#888;margin-top:8px;">Premium Member</p>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showScreen('home')"><div class="icon">🏠</div><div>Home</div></div>
+    <div class="nav-item" onclick="showScreen('courses')"><div class="icon">📚</div><div>Courses</div></div>
+    <div class="nav-item" onclick="showScreen('practice')"><div class="icon">🎤</div><div>Practice</div></div>
+    <div class="nav-item" onclick="showScreen('profile')"><div class="icon">👤</div><div>Profile</div></div>
+  </div>
+
+  <div class="lesson-modal" id="lessonModal" onclick="if(event.target===this)closeModal()">
+    <div class="modal-content">
+      <h2 id="modalTitle" style="color:var(--gold);margin-bottom:12px;"></h2>
+      <p id="modalBurmese" style="font-size:18px;margin-bottom:8px;"></p>
+      <p id="modalContent" style="white-space:pre-line;line-height:1.6;margin-bottom:12px;"></p>
+      <p id="modalExample" style="color:#aaa;font-style:italic;margin-bottom:20px;"></p>
+      <button class="btn-gold" onclick="speakModal()">🔊 Listen</button>
+      <button class="btn-gold" style="background:#333;color:#fff;margin-top:8px;" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+<script>
+const lessonsData = {"courses": [{"id": "grammar", "name": "Grammar In Use - GiU", "icon": "📖", "lessons": 437, "progress": 45, "units": [{"title": "Unit 1 - Present continuous (I am doing)", "lessons": [{"title": "Unit 1.1 - Explanation", "content": "AI explanation: Present continuous (I am doing)
+
+This unit covers the key rules and usage of Present continuous (I am doing).", "example": "Example sentences for Present continuous (I am doing).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 1.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 1.
+2. Example two for Unit 1.", "burmese": "ဥပမာများ"}, {"title": "Unit 1.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 1.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 2 - Present simple (I do)", "lessons": [{"title": "Unit 2.1 - Explanation", "content": "AI explanation: Present simple (I do)
+
+This unit covers the key rules and usage of Present simple (I do).", "example": "Example sentences for Present simple (I do).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 2.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 2.
+2. Example two for Unit 2.", "burmese": "ဥပမာများ"}, {"title": "Unit 2.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 2.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 3 - Present continuous and present simple 1", "lessons": [{"title": "Unit 3.1 - Explanation", "content": "AI explanation: Present continuous and present simple 1
+
+This unit covers the key rules and usage of Present continuous and present simple 1.", "example": "Example sentences for Present continuous and present simple 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 3.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 3.
+2. Example two for Unit 3.", "burmese": "ဥပမာများ"}, {"title": "Unit 3.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 3.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 4 - Present continuous and present simple 2", "lessons": [{"title": "Unit 4.1 - Explanation", "content": "AI explanation: Present continuous and present simple 2
+
+This unit covers the key rules and usage of Present continuous and present simple 2.", "example": "Example sentences for Present continuous and present simple 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 4.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 4.
+2. Example two for Unit 4.", "burmese": "ဥပမာများ"}, {"title": "Unit 4.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 4.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 5 - Past simple (I did)", "lessons": [{"title": "Unit 5.1 - Explanation", "content": "AI explanation: Past simple (I did)
+
+This unit covers the key rules and usage of Past simple (I did).", "example": "Example sentences for Past simple (I did).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 5.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 5.
+2. Example two for Unit 5.", "burmese": "ဥပမာများ"}, {"title": "Unit 5.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 5.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 6 - Past continuous (I was doing)", "lessons": [{"title": "Unit 6.1 - Explanation", "content": "AI explanation: Past continuous (I was doing)
+
+This unit covers the key rules and usage of Past continuous (I was doing).", "example": "Example sentences for Past continuous (I was doing).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 6.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 6.
+2. Example two for Unit 6.", "burmese": "ဥပမာများ"}, {"title": "Unit 6.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 6.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 7 - Present perfect 1 (I have done)", "lessons": [{"title": "Unit 7.1 - Explanation", "content": "AI explanation: Present perfect 1 (I have done)
+
+This unit covers the key rules and usage of Present perfect 1 (I have done).", "example": "Example sentences for Present perfect 1 (I have done).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 7.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 7.
+2. Example two for Unit 7.", "burmese": "ဥပမာများ"}, {"title": "Unit 7.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 7.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 8 - Present perfect 2 (I have done)", "lessons": [{"title": "Unit 8.1 - Explanation", "content": "AI explanation: Present perfect 2 (I have done)
+
+This unit covers the key rules and usage of Present perfect 2 (I have done).", "example": "Example sentences for Present perfect 2 (I have done).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 8.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 8.
+2. Example two for Unit 8.", "burmese": "ဥပမာများ"}, {"title": "Unit 8.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 8.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 9 - Present perfect continuous", "lessons": [{"title": "Unit 9.1 - Explanation", "content": "AI explanation: Present perfect continuous
+
+This unit covers the key rules and usage of Present perfect continuous.", "example": "Example sentences for Present perfect continuous.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 9.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 9.
+2. Example two for Unit 9.", "burmese": "ဥပမာများ"}, {"title": "Unit 9.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 9.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 10 - Present perfect continuous and simple", "lessons": [{"title": "Unit 10.1 - Explanation", "content": "AI explanation: Present perfect continuous and simple
+
+This unit covers the key rules and usage of Present perfect continuous and simple.", "example": "Example sentences for Present perfect continuous and simple.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 10.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 10.
+2. Example two for Unit 10.", "burmese": "ဥပမာများ"}, {"title": "Unit 10.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 10.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 11 - How long have you (been)...?", "lessons": [{"title": "Unit 11.1 - Explanation", "content": "AI explanation: How long have you (been)...?
+
+This unit covers the key rules and usage of How long have you (been)...?.", "example": "Example sentences for How long have you (been)...?.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 11.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 11.
+2. Example two for Unit 11.", "burmese": "ဥပမာများ"}, {"title": "Unit 11.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 11.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 12 - For and since", "lessons": [{"title": "Unit 12.1 - Explanation", "content": "AI explanation: For and since
+
+This unit covers the key rules and usage of For and since.", "example": "Example sentences for For and since.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 12.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 12.
+2. Example two for Unit 12.", "burmese": "ဥပမာများ"}, {"title": "Unit 12.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 12.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 13 - Present perfect and past 1", "lessons": [{"title": "Unit 13.1 - Explanation", "content": "AI explanation: Present perfect and past 1
+
+This unit covers the key rules and usage of Present perfect and past 1.", "example": "Example sentences for Present perfect and past 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 13.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 13.
+2. Example two for Unit 13.", "burmese": "ဥပမာများ"}, {"title": "Unit 13.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 13.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 14 - Present perfect and past 2", "lessons": [{"title": "Unit 14.1 - Explanation", "content": "AI explanation: Present perfect and past 2
+
+This unit covers the key rules and usage of Present perfect and past 2.", "example": "Example sentences for Present perfect and past 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 14.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 14.
+2. Example two for Unit 14.", "burmese": "ဥပမာများ"}, {"title": "Unit 14.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 14.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 15 - Past perfect (I had done)", "lessons": [{"title": "Unit 15.1 - Explanation", "content": "AI explanation: Past perfect (I had done)
+
+This unit covers the key rules and usage of Past perfect (I had done).", "example": "Example sentences for Past perfect (I had done).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 15.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 15.
+2. Example two for Unit 15.", "burmese": "ဥပမာများ"}, {"title": "Unit 15.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 15.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 16 - Past perfect continuous", "lessons": [{"title": "Unit 16.1 - Explanation", "content": "AI explanation: Past perfect continuous
+
+This unit covers the key rules and usage of Past perfect continuous.", "example": "Example sentences for Past perfect continuous.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 16.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 16.
+2. Example two for Unit 16.", "burmese": "ဥပမာများ"}, {"title": "Unit 16.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 16.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 17 - Have and have got", "lessons": [{"title": "Unit 17.1 - Explanation", "content": "AI explanation: Have and have got
+
+This unit covers the key rules and usage of Have and have got.", "example": "Example sentences for Have and have got.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 17.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 17.
+2. Example two for Unit 17.", "burmese": "ဥပမာများ"}, {"title": "Unit 17.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 17.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 18 - Used to (do)", "lessons": [{"title": "Unit 18.1 - Explanation", "content": "AI explanation: Used to (do)
+
+This unit covers the key rules and usage of Used to (do).", "example": "Example sentences for Used to (do).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 18.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 18.
+2. Example two for Unit 18.", "burmese": "ဥပမာများ"}, {"title": "Unit 18.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 18.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 19 - Present tenses for the future", "lessons": [{"title": "Unit 19.1 - Explanation", "content": "AI explanation: Present tenses for the future
+
+This unit covers the key rules and usage of Present tenses for the future.", "example": "Example sentences for Present tenses for the future.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 19.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 19.
+2. Example two for Unit 19.", "burmese": "ဥပမာများ"}, {"title": "Unit 19.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 19.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 20 - I'm going to (do)", "lessons": [{"title": "Unit 20.1 - Explanation", "content": "AI explanation: I'm going to (do)
+
+This unit covers the key rules and usage of I'm going to (do).", "example": "Example sentences for I'm going to (do).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 20.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 20.
+2. Example two for Unit 20.", "burmese": "ဥပမာများ"}, {"title": "Unit 20.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 20.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 21 - Will and shall 1", "lessons": [{"title": "Unit 21.1 - Explanation", "content": "AI explanation: Will and shall 1
+
+This unit covers the key rules and usage of Will and shall 1.", "example": "Example sentences for Will and shall 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 21.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 21.
+2. Example two for Unit 21.", "burmese": "ဥပမာများ"}, {"title": "Unit 21.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 21.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 22 - Will and shall 2", "lessons": [{"title": "Unit 22.1 - Explanation", "content": "AI explanation: Will and shall 2
+
+This unit covers the key rules and usage of Will and shall 2.", "example": "Example sentences for Will and shall 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 22.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 22.
+2. Example two for Unit 22.", "burmese": "ဥပမာများ"}, {"title": "Unit 22.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 22.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 23 - I will and I'm going to", "lessons": [{"title": "Unit 23.1 - Explanation", "content": "AI explanation: I will and I'm going to
+
+This unit covers the key rules and usage of I will and I'm going to.", "example": "Example sentences for I will and I'm going to.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 23.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 23.
+2. Example two for Unit 23.", "burmese": "ဥပမာများ"}, {"title": "Unit 23.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 23.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 24 - Will be doing and will have done", "lessons": [{"title": "Unit 24.1 - Explanation", "content": "AI explanation: Will be doing and will have done
+
+This unit covers the key rules and usage of Will be doing and will have done.", "example": "Example sentences for Will be doing and will have done.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 24.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 24.
+2. Example two for Unit 24.", "burmese": "ဥပမာများ"}, {"title": "Unit 24.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 24.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 25 - When I do / When I've done", "lessons": [{"title": "Unit 25.1 - Explanation", "content": "AI explanation: When I do / When I've done
+
+This unit covers the key rules and usage of When I do / When I've done.", "example": "Example sentences for When I do / When I've done.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 25.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 25.
+2. Example two for Unit 25.", "burmese": "ဥပမာများ"}, {"title": "Unit 25.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 25.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 26 - Can, could and (be) able to", "lessons": [{"title": "Unit 26.1 - Explanation", "content": "AI explanation: Can, could and (be) able to
+
+This unit covers the key rules and usage of Can, could and (be) able to.", "example": "Example sentences for Can, could and (be) able to.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 26.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 26.
+2. Example two for Unit 26.", "burmese": "ဥပမာများ"}, {"title": "Unit 26.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 26.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 27 - Could (do) and could have (done)", "lessons": [{"title": "Unit 27.1 - Explanation", "content": "AI explanation: Could (do) and could have (done)
+
+This unit covers the key rules and usage of Could (do) and could have (done).", "example": "Example sentences for Could (do) and could have (done).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 27.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 27.
+2. Example two for Unit 27.", "burmese": "ဥပမာများ"}, {"title": "Unit 27.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 27.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 28 - Must and can't", "lessons": [{"title": "Unit 28.1 - Explanation", "content": "AI explanation: Must and can't
+
+This unit covers the key rules and usage of Must and can't.", "example": "Example sentences for Must and can't.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 28.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 28.
+2. Example two for Unit 28.", "burmese": "ဥပမာများ"}, {"title": "Unit 28.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 28.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 29 - May and might 1", "lessons": [{"title": "Unit 29.1 - Explanation", "content": "AI explanation: May and might 1
+
+This unit covers the key rules and usage of May and might 1.", "example": "Example sentences for May and might 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 29.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 29.
+2. Example two for Unit 29.", "burmese": "ဥပမာများ"}, {"title": "Unit 29.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 29.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 30 - May and might 2", "lessons": [{"title": "Unit 30.1 - Explanation", "content": "AI explanation: May and might 2
+
+This unit covers the key rules and usage of May and might 2.", "example": "Example sentences for May and might 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 30.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 30.
+2. Example two for Unit 30.", "burmese": "ဥပမာများ"}, {"title": "Unit 30.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 30.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 31 - Have to and must", "lessons": [{"title": "Unit 31.1 - Explanation", "content": "AI explanation: Have to and must
+
+This unit covers the key rules and usage of Have to and must.", "example": "Example sentences for Have to and must.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 31.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 31.
+2. Example two for Unit 31.", "burmese": "ဥပမာများ"}, {"title": "Unit 31.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 31.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 32 - Must, mustn't, needn't", "lessons": [{"title": "Unit 32.1 - Explanation", "content": "AI explanation: Must, mustn't, needn't
+
+This unit covers the key rules and usage of Must, mustn't, needn't.", "example": "Example sentences for Must, mustn't, needn't.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 32.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 32.
+2. Example two for Unit 32.", "burmese": "ဥပမာများ"}, {"title": "Unit 32.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 32.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 33 - Should 1", "lessons": [{"title": "Unit 33.1 - Explanation", "content": "AI explanation: Should 1
+
+This unit covers the key rules and usage of Should 1.", "example": "Example sentences for Should 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 33.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 33.
+2. Example two for Unit 33.", "burmese": "ဥပမာများ"}, {"title": "Unit 33.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 33.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 34 - Should 2", "lessons": [{"title": "Unit 34.1 - Explanation", "content": "AI explanation: Should 2
+
+This unit covers the key rules and usage of Should 2.", "example": "Example sentences for Should 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 34.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 34.
+2. Example two for Unit 34.", "burmese": "ဥပမာများ"}, {"title": "Unit 34.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 34.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 35 - Had better", "lessons": [{"title": "Unit 35.1 - Explanation", "content": "AI explanation: Had better
+
+This unit covers the key rules and usage of Had better.", "example": "Example sentences for Had better.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 35.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 35.
+2. Example two for Unit 35.", "burmese": "ဥပမာများ"}, {"title": "Unit 35.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 35.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 36 - Would", "lessons": [{"title": "Unit 36.1 - Explanation", "content": "AI explanation: Would
+
+This unit covers the key rules and usage of Would.", "example": "Example sentences for Would.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 36.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 36.
+2. Example two for Unit 36.", "burmese": "ဥပမာများ"}, {"title": "Unit 36.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 36.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 37 - Can/Could/Would you...?", "lessons": [{"title": "Unit 37.1 - Explanation", "content": "AI explanation: Can/Could/Would you...?
+
+This unit covers the key rules and usage of Can/Could/Would you...?.", "example": "Example sentences for Can/Could/Would you...?.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 37.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 37.
+2. Example two for Unit 37.", "burmese": "ဥပမာများ"}, {"title": "Unit 37.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 37.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 38 - If I do... and If I did...", "lessons": [{"title": "Unit 38.1 - Explanation", "content": "AI explanation: If I do... and If I did...
+
+This unit covers the key rules and usage of If I do... and If I did....", "example": "Example sentences for If I do... and If I did....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 38.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 38.
+2. Example two for Unit 38.", "burmese": "ဥပမာများ"}, {"title": "Unit 38.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 38.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 39 - If I knew...", "lessons": [{"title": "Unit 39.1 - Explanation", "content": "AI explanation: If I knew...
+
+This unit covers the key rules and usage of If I knew....", "example": "Example sentences for If I knew....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 39.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 39.
+2. Example two for Unit 39.", "burmese": "ဥပမာများ"}, {"title": "Unit 39.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 39.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 40 - If I had known...", "lessons": [{"title": "Unit 40.1 - Explanation", "content": "AI explanation: If I had known...
+
+This unit covers the key rules and usage of If I had known....", "example": "Example sentences for If I had known....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 40.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 40.
+2. Example two for Unit 40.", "burmese": "ဥပမာများ"}, {"title": "Unit 40.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 40.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 41 - Wish", "lessons": [{"title": "Unit 41.1 - Explanation", "content": "AI explanation: Wish
+
+This unit covers the key rules and usage of Wish.", "example": "Example sentences for Wish.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 41.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 41.
+2. Example two for Unit 41.", "burmese": "ဥပမာများ"}, {"title": "Unit 41.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 41.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 42 - Passive 1 (is done / was done)", "lessons": [{"title": "Unit 42.1 - Explanation", "content": "AI explanation: Passive 1 (is done / was done)
+
+This unit covers the key rules and usage of Passive 1 (is done / was done).", "example": "Example sentences for Passive 1 (is done / was done).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 42.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 42.
+2. Example two for Unit 42.", "burmese": "ဥပမာများ"}, {"title": "Unit 42.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 42.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 43 - Passive 2", "lessons": [{"title": "Unit 43.1 - Explanation", "content": "AI explanation: Passive 2
+
+This unit covers the key rules and usage of Passive 2.", "example": "Example sentences for Passive 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 43.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 43.
+2. Example two for Unit 43.", "burmese": "ဥပမာများ"}, {"title": "Unit 43.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 43.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 44 - Passive 3", "lessons": [{"title": "Unit 44.1 - Explanation", "content": "AI explanation: Passive 3
+
+This unit covers the key rules and usage of Passive 3.", "example": "Example sentences for Passive 3.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 44.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 44.
+2. Example two for Unit 44.", "burmese": "ဥပမာများ"}, {"title": "Unit 44.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 44.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 45 - It is said that...", "lessons": [{"title": "Unit 45.1 - Explanation", "content": "AI explanation: It is said that...
+
+This unit covers the key rules and usage of It is said that....", "example": "Example sentences for It is said that....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 45.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 45.
+2. Example two for Unit 45.", "burmese": "ဥပမာများ"}, {"title": "Unit 45.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 45.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 46 - Have something done", "lessons": [{"title": "Unit 46.1 - Explanation", "content": "AI explanation: Have something done
+
+This unit covers the key rules and usage of Have something done.", "example": "Example sentences for Have something done.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 46.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 46.
+2. Example two for Unit 46.", "burmese": "ဥပမာများ"}, {"title": "Unit 46.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 46.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 47 - Reported speech 1", "lessons": [{"title": "Unit 47.1 - Explanation", "content": "AI explanation: Reported speech 1
+
+This unit covers the key rules and usage of Reported speech 1.", "example": "Example sentences for Reported speech 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 47.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 47.
+2. Example two for Unit 47.", "burmese": "ဥပမာများ"}, {"title": "Unit 47.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 47.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 48 - Reported speech 2", "lessons": [{"title": "Unit 48.1 - Explanation", "content": "AI explanation: Reported speech 2
+
+This unit covers the key rules and usage of Reported speech 2.", "example": "Example sentences for Reported speech 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 48.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 48.
+2. Example two for Unit 48.", "burmese": "ဥပမာများ"}, {"title": "Unit 48.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 48.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 49 - Questions 1", "lessons": [{"title": "Unit 49.1 - Explanation", "content": "AI explanation: Questions 1
+
+This unit covers the key rules and usage of Questions 1.", "example": "Example sentences for Questions 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 49.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 49.
+2. Example two for Unit 49.", "burmese": "ဥပမာများ"}, {"title": "Unit 49.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 49.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 50 - Questions 2", "lessons": [{"title": "Unit 50.1 - Explanation", "content": "AI explanation: Questions 2
+
+This unit covers the key rules and usage of Questions 2.", "example": "Example sentences for Questions 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 50.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 50.
+2. Example two for Unit 50.", "burmese": "ဥပမာများ"}, {"title": "Unit 50.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 50.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 51 - Auxiliary verbs", "lessons": [{"title": "Unit 51.1 - Explanation", "content": "AI explanation: Auxiliary verbs
+
+This unit covers the key rules and usage of Auxiliary verbs.", "example": "Example sentences for Auxiliary verbs.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 51.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 51.
+2. Example two for Unit 51.", "burmese": "ဥပမာများ"}, {"title": "Unit 51.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 51.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 52 - Question tags", "lessons": [{"title": "Unit 52.1 - Explanation", "content": "AI explanation: Question tags
+
+This unit covers the key rules and usage of Question tags.", "example": "Example sentences for Question tags.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 52.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 52.
+2. Example two for Unit 52.", "burmese": "ဥပမာများ"}, {"title": "Unit 52.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 52.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 53 - Verb + -ing", "lessons": [{"title": "Unit 53.1 - Explanation", "content": "AI explanation: Verb + -ing
+
+This unit covers the key rules and usage of Verb + -ing.", "example": "Example sentences for Verb + -ing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 53.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 53.
+2. Example two for Unit 53.", "burmese": "ဥပမာများ"}, {"title": "Unit 53.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 53.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 54 - Verb + to...", "lessons": [{"title": "Unit 54.1 - Explanation", "content": "AI explanation: Verb + to...
+
+This unit covers the key rules and usage of Verb + to....", "example": "Example sentences for Verb + to....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 54.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 54.
+2. Example two for Unit 54.", "burmese": "ဥပမာများ"}, {"title": "Unit 54.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 54.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 55 - Verb + object + to...", "lessons": [{"title": "Unit 55.1 - Explanation", "content": "AI explanation: Verb + object + to...
+
+This unit covers the key rules and usage of Verb + object + to....", "example": "Example sentences for Verb + object + to....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 55.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 55.
+2. Example two for Unit 55.", "burmese": "ဥပမာများ"}, {"title": "Unit 55.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 55.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 56 - Verb + -ing or to... 1", "lessons": [{"title": "Unit 56.1 - Explanation", "content": "AI explanation: Verb + -ing or to... 1
+
+This unit covers the key rules and usage of Verb + -ing or to... 1.", "example": "Example sentences for Verb + -ing or to... 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 56.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 56.
+2. Example two for Unit 56.", "burmese": "ဥပမာများ"}, {"title": "Unit 56.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 56.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 57 - Verb + -ing or to... 2", "lessons": [{"title": "Unit 57.1 - Explanation", "content": "AI explanation: Verb + -ing or to... 2
+
+This unit covers the key rules and usage of Verb + -ing or to... 2.", "example": "Example sentences for Verb + -ing or to... 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 57.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 57.
+2. Example two for Unit 57.", "burmese": "ဥပမာများ"}, {"title": "Unit 57.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 57.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 58 - Prefer and would rather", "lessons": [{"title": "Unit 58.1 - Explanation", "content": "AI explanation: Prefer and would rather
+
+This unit covers the key rules and usage of Prefer and would rather.", "example": "Example sentences for Prefer and would rather.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 58.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 58.
+2. Example two for Unit 58.", "burmese": "ဥပမာများ"}, {"title": "Unit 58.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 58.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 59 - Preposition + -ing", "lessons": [{"title": "Unit 59.1 - Explanation", "content": "AI explanation: Preposition + -ing
+
+This unit covers the key rules and usage of Preposition + -ing.", "example": "Example sentences for Preposition + -ing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 59.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 59.
+2. Example two for Unit 59.", "burmese": "ဥပမာများ"}, {"title": "Unit 59.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 59.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 60 - Be/get used to", "lessons": [{"title": "Unit 60.1 - Explanation", "content": "AI explanation: Be/get used to
+
+This unit covers the key rules and usage of Be/get used to.", "example": "Example sentences for Be/get used to.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 60.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 60.
+2. Example two for Unit 60.", "burmese": "ဥပမာများ"}, {"title": "Unit 60.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 60.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 61 - Verb + preposition + -ing", "lessons": [{"title": "Unit 61.1 - Explanation", "content": "AI explanation: Verb + preposition + -ing
+
+This unit covers the key rules and usage of Verb + preposition + -ing.", "example": "Example sentences for Verb + preposition + -ing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 61.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 61.
+2. Example two for Unit 61.", "burmese": "ဥပမာများ"}, {"title": "Unit 61.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 61.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 62 - Expressions + -ing", "lessons": [{"title": "Unit 62.1 - Explanation", "content": "AI explanation: Expressions + -ing
+
+This unit covers the key rules and usage of Expressions + -ing.", "example": "Example sentences for Expressions + -ing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 62.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 62.
+2. Example two for Unit 62.", "burmese": "ဥပမာများ"}, {"title": "Unit 62.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 62.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 63 - To..., for... and so that...", "lessons": [{"title": "Unit 63.1 - Explanation", "content": "AI explanation: To..., for... and so that...
+
+This unit covers the key rules and usage of To..., for... and so that....", "example": "Example sentences for To..., for... and so that....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 63.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 63.
+2. Example two for Unit 63.", "burmese": "ဥပမာများ"}, {"title": "Unit 63.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 63.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 64 - Adjective + to...", "lessons": [{"title": "Unit 64.1 - Explanation", "content": "AI explanation: Adjective + to...
+
+This unit covers the key rules and usage of Adjective + to....", "example": "Example sentences for Adjective + to....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 64.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 64.
+2. Example two for Unit 64.", "burmese": "ဥပမာများ"}, {"title": "Unit 64.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 64.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 65 - To... (afraid to do)", "lessons": [{"title": "Unit 65.1 - Explanation", "content": "AI explanation: To... (afraid to do)
+
+This unit covers the key rules and usage of To... (afraid to do).", "example": "Example sentences for To... (afraid to do).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 65.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 65.
+2. Example two for Unit 65.", "burmese": "ဥပမာများ"}, {"title": "Unit 65.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 65.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 66 - See somebody do and see somebody doing", "lessons": [{"title": "Unit 66.1 - Explanation", "content": "AI explanation: See somebody do and see somebody doing
+
+This unit covers the key rules and usage of See somebody do and see somebody doing.", "example": "Example sentences for See somebody do and see somebody doing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 66.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 66.
+2. Example two for Unit 66.", "burmese": "ဥပမာများ"}, {"title": "Unit 66.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 66.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 67 - Noun + to...", "lessons": [{"title": "Unit 67.1 - Explanation", "content": "AI explanation: Noun + to...
+
+This unit covers the key rules and usage of Noun + to....", "example": "Example sentences for Noun + to....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 67.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 67.
+2. Example two for Unit 67.", "burmese": "ဥပမာများ"}, {"title": "Unit 67.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 67.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 68 - Noun + preposition + -ing", "lessons": [{"title": "Unit 68.1 - Explanation", "content": "AI explanation: Noun + preposition + -ing
+
+This unit covers the key rules and usage of Noun + preposition + -ing.", "example": "Example sentences for Noun + preposition + -ing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 68.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 68.
+2. Example two for Unit 68.", "burmese": "ဥပမာများ"}, {"title": "Unit 68.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 68.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 69 - Noun + preposition + to...", "lessons": [{"title": "Unit 69.1 - Explanation", "content": "AI explanation: Noun + preposition + to...
+
+This unit covers the key rules and usage of Noun + preposition + to....", "example": "Example sentences for Noun + preposition + to....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 69.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 69.
+2. Example two for Unit 69.", "burmese": "ဥပမာများ"}, {"title": "Unit 69.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 69.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 70 - Adjective + preposition + to...", "lessons": [{"title": "Unit 70.1 - Explanation", "content": "AI explanation: Adjective + preposition + to...
+
+This unit covers the key rules and usage of Adjective + preposition + to....", "example": "Example sentences for Adjective + preposition + to....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 70.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 70.
+2. Example two for Unit 70.", "burmese": "ဥပမာများ"}, {"title": "Unit 70.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 70.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 71 - Adjective + preposition + -ing", "lessons": [{"title": "Unit 71.1 - Explanation", "content": "AI explanation: Adjective + preposition + -ing
+
+This unit covers the key rules and usage of Adjective + preposition + -ing.", "example": "Example sentences for Adjective + preposition + -ing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 71.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 71.
+2. Example two for Unit 71.", "burmese": "ဥပမာများ"}, {"title": "Unit 71.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 71.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 72 - Verb + preposition + to...", "lessons": [{"title": "Unit 72.1 - Explanation", "content": "AI explanation: Verb + preposition + to...
+
+This unit covers the key rules and usage of Verb + preposition + to....", "example": "Example sentences for Verb + preposition + to....", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 72.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 72.
+2. Example two for Unit 72.", "burmese": "ဥပမာများ"}, {"title": "Unit 72.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 72.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 73 - Verb + preposition + -ing", "lessons": [{"title": "Unit 73.1 - Explanation", "content": "AI explanation: Verb + preposition + -ing
+
+This unit covers the key rules and usage of Verb + preposition + -ing.", "example": "Example sentences for Verb + preposition + -ing.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 73.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 73.
+2. Example two for Unit 73.", "burmese": "ဥပမာများ"}, {"title": "Unit 73.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 73.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 74 - Phrasal verbs 1", "lessons": [{"title": "Unit 74.1 - Explanation", "content": "AI explanation: Phrasal verbs 1
+
+This unit covers the key rules and usage of Phrasal verbs 1.", "example": "Example sentences for Phrasal verbs 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 74.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 74.
+2. Example two for Unit 74.", "burmese": "ဥပမာများ"}, {"title": "Unit 74.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 74.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 75 - Phrasal verbs 2", "lessons": [{"title": "Unit 75.1 - Explanation", "content": "AI explanation: Phrasal verbs 2
+
+This unit covers the key rules and usage of Phrasal verbs 2.", "example": "Example sentences for Phrasal verbs 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 75.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 75.
+2. Example two for Unit 75.", "burmese": "ဥပမာများ"}, {"title": "Unit 75.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 75.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 76 - Phrasal verbs 3", "lessons": [{"title": "Unit 76.1 - Explanation", "content": "AI explanation: Phrasal verbs 3
+
+This unit covers the key rules and usage of Phrasal verbs 3.", "example": "Example sentences for Phrasal verbs 3.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 76.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 76.
+2. Example two for Unit 76.", "burmese": "ဥပမာများ"}, {"title": "Unit 76.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 76.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 77 - Phrasal verbs 4", "lessons": [{"title": "Unit 77.1 - Explanation", "content": "AI explanation: Phrasal verbs 4
+
+This unit covers the key rules and usage of Phrasal verbs 4.", "example": "Example sentences for Phrasal verbs 4.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 77.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 77.
+2. Example two for Unit 77.", "burmese": "ဥပမာများ"}, {"title": "Unit 77.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 77.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 78 - Phrasal verbs 5", "lessons": [{"title": "Unit 78.1 - Explanation", "content": "AI explanation: Phrasal verbs 5
+
+This unit covers the key rules and usage of Phrasal verbs 5.", "example": "Example sentences for Phrasal verbs 5.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 78.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 78.
+2. Example two for Unit 78.", "burmese": "ဥပမာများ"}, {"title": "Unit 78.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 78.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 79 - Phrasal verbs 6", "lessons": [{"title": "Unit 79.1 - Explanation", "content": "AI explanation: Phrasal verbs 6
+
+This unit covers the key rules and usage of Phrasal verbs 6.", "example": "Example sentences for Phrasal verbs 6.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 79.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 79.
+2. Example two for Unit 79.", "burmese": "ဥပမာများ"}, {"title": "Unit 79.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 79.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 80 - Phrasal verbs 7", "lessons": [{"title": "Unit 80.1 - Explanation", "content": "AI explanation: Phrasal verbs 7
+
+This unit covers the key rules and usage of Phrasal verbs 7.", "example": "Example sentences for Phrasal verbs 7.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 80.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 80.
+2. Example two for Unit 80.", "burmese": "ဥပမာများ"}, {"title": "Unit 80.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 80.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 81 - Phrasal verbs 8", "lessons": [{"title": "Unit 81.1 - Explanation", "content": "AI explanation: Phrasal verbs 8
+
+This unit covers the key rules and usage of Phrasal verbs 8.", "example": "Example sentences for Phrasal verbs 8.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 81.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 81.
+2. Example two for Unit 81.", "burmese": "ဥပမာများ"}, {"title": "Unit 81.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 81.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 82 - Phrasal verbs 9", "lessons": [{"title": "Unit 82.1 - Explanation", "content": "AI explanation: Phrasal verbs 9
+
+This unit covers the key rules and usage of Phrasal verbs 9.", "example": "Example sentences for Phrasal verbs 9.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 82.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 82.
+2. Example two for Unit 82.", "burmese": "ဥပမာများ"}, {"title": "Unit 82.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 82.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 83 - Countable and uncountable 1", "lessons": [{"title": "Unit 83.1 - Explanation", "content": "AI explanation: Countable and uncountable 1
+
+This unit covers the key rules and usage of Countable and uncountable 1.", "example": "Example sentences for Countable and uncountable 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 83.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 83.
+2. Example two for Unit 83.", "burmese": "ဥပမာများ"}, {"title": "Unit 83.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 83.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 84 - Countable and uncountable 2", "lessons": [{"title": "Unit 84.1 - Explanation", "content": "AI explanation: Countable and uncountable 2
+
+This unit covers the key rules and usage of Countable and uncountable 2.", "example": "Example sentences for Countable and uncountable 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 84.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 84.
+2. Example two for Unit 84.", "burmese": "ဥပမာများ"}, {"title": "Unit 84.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 84.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 85 - Countable nouns with a/an and some", "lessons": [{"title": "Unit 85.1 - Explanation", "content": "AI explanation: Countable nouns with a/an and some
+
+This unit covers the key rules and usage of Countable nouns with a/an and some.", "example": "Example sentences for Countable nouns with a/an and some.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 85.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 85.
+2. Example two for Unit 85.", "burmese": "ဥပမာများ"}, {"title": "Unit 85.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 85.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 86 - A/an and the", "lessons": [{"title": "Unit 86.1 - Explanation", "content": "AI explanation: A/an and the
+
+This unit covers the key rules and usage of A/an and the.", "example": "Example sentences for A/an and the.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 86.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 86.
+2. Example two for Unit 86.", "burmese": "ဥပမာများ"}, {"title": "Unit 86.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 86.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 87 - The 1", "lessons": [{"title": "Unit 87.1 - Explanation", "content": "AI explanation: The 1
+
+This unit covers the key rules and usage of The 1.", "example": "Example sentences for The 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 87.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 87.
+2. Example two for Unit 87.", "burmese": "ဥပမာများ"}, {"title": "Unit 87.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 87.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 88 - The 2", "lessons": [{"title": "Unit 88.1 - Explanation", "content": "AI explanation: The 2
+
+This unit covers the key rules and usage of The 2.", "example": "Example sentences for The 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 88.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 88.
+2. Example two for Unit 88.", "burmese": "ဥပမာများ"}, {"title": "Unit 88.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 88.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 89 - The 3", "lessons": [{"title": "Unit 89.1 - Explanation", "content": "AI explanation: The 3
+
+This unit covers the key rules and usage of The 3.", "example": "Example sentences for The 3.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 89.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 89.
+2. Example two for Unit 89.", "burmese": "ဥပမာများ"}, {"title": "Unit 89.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 89.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 90 - School / the school", "lessons": [{"title": "Unit 90.1 - Explanation", "content": "AI explanation: School / the school
+
+This unit covers the key rules and usage of School / the school.", "example": "Example sentences for School / the school.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 90.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 90.
+2. Example two for Unit 90.", "burmese": "ဥပမာများ"}, {"title": "Unit 90.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 90.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 91 - Children / the children", "lessons": [{"title": "Unit 91.1 - Explanation", "content": "AI explanation: Children / the children
+
+This unit covers the key rules and usage of Children / the children.", "example": "Example sentences for Children / the children.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 91.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 91.
+2. Example two for Unit 91.", "burmese": "ဥပမာများ"}, {"title": "Unit 91.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 91.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 92 - The (school / the school etc.)", "lessons": [{"title": "Unit 92.1 - Explanation", "content": "AI explanation: The (school / the school etc.)
+
+This unit covers the key rules and usage of The (school / the school etc.).", "example": "Example sentences for The (school / the school etc.).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 92.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 92.
+2. Example two for Unit 92.", "burmese": "ဥပမာများ"}, {"title": "Unit 92.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 92.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 93 - The (children / the children)", "lessons": [{"title": "Unit 93.1 - Explanation", "content": "AI explanation: The (children / the children)
+
+This unit covers the key rules and usage of The (children / the children).", "example": "Example sentences for The (children / the children).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 93.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 93.
+2. Example two for Unit 93.", "burmese": "ဥပမာများ"}, {"title": "Unit 93.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 93.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 94 - Names with and without the 1", "lessons": [{"title": "Unit 94.1 - Explanation", "content": "AI explanation: Names with and without the 1
+
+This unit covers the key rules and usage of Names with and without the 1.", "example": "Example sentences for Names with and without the 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 94.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 94.
+2. Example two for Unit 94.", "burmese": "ဥပမာများ"}, {"title": "Unit 94.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 94.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 95 - Names with and without the 2", "lessons": [{"title": "Unit 95.1 - Explanation", "content": "AI explanation: Names with and without the 2
+
+This unit covers the key rules and usage of Names with and without the 2.", "example": "Example sentences for Names with and without the 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 95.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 95.
+2. Example two for Unit 95.", "burmese": "ဥပမာများ"}, {"title": "Unit 95.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 95.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 96 - Singular and plural", "lessons": [{"title": "Unit 96.1 - Explanation", "content": "AI explanation: Singular and plural
+
+This unit covers the key rules and usage of Singular and plural.", "example": "Example sentences for Singular and plural.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 96.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 96.
+2. Example two for Unit 96.", "burmese": "ဥပမာများ"}, {"title": "Unit 96.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 96.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 97 - Noun + noun", "lessons": [{"title": "Unit 97.1 - Explanation", "content": "AI explanation: Noun + noun
+
+This unit covers the key rules and usage of Noun + noun.", "example": "Example sentences for Noun + noun.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 97.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 97.
+2. Example two for Unit 97.", "burmese": "ဥပမာများ"}, {"title": "Unit 97.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 97.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 98 - One and ones", "lessons": [{"title": "Unit 98.1 - Explanation", "content": "AI explanation: One and ones
+
+This unit covers the key rules and usage of One and ones.", "example": "Example sentences for One and ones.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 98.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 98.
+2. Example two for Unit 98.", "burmese": "ဥပမာများ"}, {"title": "Unit 98.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 98.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 99 - Some and any", "lessons": [{"title": "Unit 99.1 - Explanation", "content": "AI explanation: Some and any
+
+This unit covers the key rules and usage of Some and any.", "example": "Example sentences for Some and any.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 99.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 99.
+2. Example two for Unit 99.", "burmese": "ဥပမာများ"}, {"title": "Unit 99.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 99.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 100 - No/none/any", "lessons": [{"title": "Unit 100.1 - Explanation", "content": "AI explanation: No/none/any
+
+This unit covers the key rules and usage of No/none/any.", "example": "Example sentences for No/none/any.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 100.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 100.
+2. Example two for Unit 100.", "burmese": "ဥပမာများ"}, {"title": "Unit 100.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 100.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 101 - Much, many, little, few", "lessons": [{"title": "Unit 101.1 - Explanation", "content": "AI explanation: Much, many, little, few
+
+This unit covers the key rules and usage of Much, many, little, few.", "example": "Example sentences for Much, many, little, few.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 101.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 101.
+2. Example two for Unit 101.", "burmese": "ဥပမာများ"}, {"title": "Unit 101.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 101.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 102 - All / all of / most / most of", "lessons": [{"title": "Unit 102.1 - Explanation", "content": "AI explanation: All / all of / most / most of
+
+This unit covers the key rules and usage of All / all of / most / most of.", "example": "Example sentences for All / all of / most / most of.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 102.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 102.
+2. Example two for Unit 102.", "burmese": "ဥပမာများ"}, {"title": "Unit 102.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 102.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 103 - Both / both of / neither / neither of", "lessons": [{"title": "Unit 103.1 - Explanation", "content": "AI explanation: Both / both of / neither / neither of
+
+This unit covers the key rules and usage of Both / both of / neither / neither of.", "example": "Example sentences for Both / both of / neither / neither of.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 103.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 103.
+2. Example two for Unit 103.", "burmese": "ဥပမာများ"}, {"title": "Unit 103.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 103.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 104 - All, every and whole", "lessons": [{"title": "Unit 104.1 - Explanation", "content": "AI explanation: All, every and whole
+
+This unit covers the key rules and usage of All, every and whole.", "example": "Example sentences for All, every and whole.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 104.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 104.
+2. Example two for Unit 104.", "burmese": "ဥပမာများ"}, {"title": "Unit 104.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 104.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 105 - Each and every", "lessons": [{"title": "Unit 105.1 - Explanation", "content": "AI explanation: Each and every
+
+This unit covers the key rules and usage of Each and every.", "example": "Example sentences for Each and every.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 105.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 105.
+2. Example two for Unit 105.", "burmese": "ဥပမာများ"}, {"title": "Unit 105.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 105.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 106 - Relative clauses 1", "lessons": [{"title": "Unit 106.1 - Explanation", "content": "AI explanation: Relative clauses 1
+
+This unit covers the key rules and usage of Relative clauses 1.", "example": "Example sentences for Relative clauses 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 106.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 106.
+2. Example two for Unit 106.", "burmese": "ဥပမာများ"}, {"title": "Unit 106.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 106.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 107 - Relative clauses 2", "lessons": [{"title": "Unit 107.1 - Explanation", "content": "AI explanation: Relative clauses 2
+
+This unit covers the key rules and usage of Relative clauses 2.", "example": "Example sentences for Relative clauses 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 107.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 107.
+2. Example two for Unit 107.", "burmese": "ဥပမာများ"}, {"title": "Unit 107.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 107.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 108 - Relative clauses 3", "lessons": [{"title": "Unit 108.1 - Explanation", "content": "AI explanation: Relative clauses 3
+
+This unit covers the key rules and usage of Relative clauses 3.", "example": "Example sentences for Relative clauses 3.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 108.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 108.
+2. Example two for Unit 108.", "burmese": "ဥပမာများ"}, {"title": "Unit 108.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 108.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 109 - Relative clauses 4", "lessons": [{"title": "Unit 109.1 - Explanation", "content": "AI explanation: Relative clauses 4
+
+This unit covers the key rules and usage of Relative clauses 4.", "example": "Example sentences for Relative clauses 4.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 109.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 109.
+2. Example two for Unit 109.", "burmese": "ဥပမာများ"}, {"title": "Unit 109.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 109.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 110 - Ing and ed clauses", "lessons": [{"title": "Unit 110.1 - Explanation", "content": "AI explanation: Ing and ed clauses
+
+This unit covers the key rules and usage of Ing and ed clauses.", "example": "Example sentences for Ing and ed clauses.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 110.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 110.
+2. Example two for Unit 110.", "burmese": "ဥပမာများ"}, {"title": "Unit 110.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 110.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 111 - Adjectives ending in -ing and -ed", "lessons": [{"title": "Unit 111.1 - Explanation", "content": "AI explanation: Adjectives ending in -ing and -ed
+
+This unit covers the key rules and usage of Adjectives ending in -ing and -ed.", "example": "Example sentences for Adjectives ending in -ing and -ed.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 111.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 111.
+2. Example two for Unit 111.", "burmese": "ဥပမာများ"}, {"title": "Unit 111.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 111.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 112 - Adjectives: a nice new house", "lessons": [{"title": "Unit 112.1 - Explanation", "content": "AI explanation: Adjectives: a nice new house
+
+This unit covers the key rules and usage of Adjectives: a nice new house.", "example": "Example sentences for Adjectives: a nice new house.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 112.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 112.
+2. Example two for Unit 112.", "burmese": "ဥပမာများ"}, {"title": "Unit 112.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 112.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 113 - Adjectives and adverbs 1", "lessons": [{"title": "Unit 113.1 - Explanation", "content": "AI explanation: Adjectives and adverbs 1
+
+This unit covers the key rules and usage of Adjectives and adverbs 1.", "example": "Example sentences for Adjectives and adverbs 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 113.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 113.
+2. Example two for Unit 113.", "burmese": "ဥပမာများ"}, {"title": "Unit 113.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 113.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 114 - Adjectives and adverbs 2", "lessons": [{"title": "Unit 114.1 - Explanation", "content": "AI explanation: Adjectives and adverbs 2
+
+This unit covers the key rules and usage of Adjectives and adverbs 2.", "example": "Example sentences for Adjectives and adverbs 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 114.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 114.
+2. Example two for Unit 114.", "burmese": "ဥပမာများ"}, {"title": "Unit 114.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 114.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 115 - So and such", "lessons": [{"title": "Unit 115.1 - Explanation", "content": "AI explanation: So and such
+
+This unit covers the key rules and usage of So and such.", "example": "Example sentences for So and such.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 115.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 115.
+2. Example two for Unit 115.", "burmese": "ဥပမာများ"}, {"title": "Unit 115.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 115.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 116 - Enough and too", "lessons": [{"title": "Unit 116.1 - Explanation", "content": "AI explanation: Enough and too
+
+This unit covers the key rules and usage of Enough and too.", "example": "Example sentences for Enough and too.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 116.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 116.
+2. Example two for Unit 116.", "burmese": "ဥပမာများ"}, {"title": "Unit 116.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 116.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 117 - Quite, pretty, rather and fairly", "lessons": [{"title": "Unit 117.1 - Explanation", "content": "AI explanation: Quite, pretty, rather and fairly
+
+This unit covers the key rules and usage of Quite, pretty, rather and fairly.", "example": "Example sentences for Quite, pretty, rather and fairly.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 117.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 117.
+2. Example two for Unit 117.", "burmese": "ဥပမာများ"}, {"title": "Unit 117.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 117.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 118 - Comparison 1", "lessons": [{"title": "Unit 118.1 - Explanation", "content": "AI explanation: Comparison 1
+
+This unit covers the key rules and usage of Comparison 1.", "example": "Example sentences for Comparison 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 118.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 118.
+2. Example two for Unit 118.", "burmese": "ဥပမာများ"}, {"title": "Unit 118.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 118.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 119 - Comparison 2", "lessons": [{"title": "Unit 119.1 - Explanation", "content": "AI explanation: Comparison 2
+
+This unit covers the key rules and usage of Comparison 2.", "example": "Example sentences for Comparison 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 119.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 119.
+2. Example two for Unit 119.", "burmese": "ဥပမာများ"}, {"title": "Unit 119.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 119.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 120 - Comparison 3", "lessons": [{"title": "Unit 120.1 - Explanation", "content": "AI explanation: Comparison 3
+
+This unit covers the key rules and usage of Comparison 3.", "example": "Example sentences for Comparison 3.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 120.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 120.
+2. Example two for Unit 120.", "burmese": "ဥပမာများ"}, {"title": "Unit 120.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 120.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 121 - Superlatives", "lessons": [{"title": "Unit 121.1 - Explanation", "content": "AI explanation: Superlatives
+
+This unit covers the key rules and usage of Superlatives.", "example": "Example sentences for Superlatives.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 121.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 121.
+2. Example two for Unit 121.", "burmese": "ဥပမာများ"}, {"title": "Unit 121.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 121.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 122 - Word order 1", "lessons": [{"title": "Unit 122.1 - Explanation", "content": "AI explanation: Word order 1
+
+This unit covers the key rules and usage of Word order 1.", "example": "Example sentences for Word order 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 122.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 122.
+2. Example two for Unit 122.", "burmese": "ဥပမာများ"}, {"title": "Unit 122.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 122.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 123 - Word order 2", "lessons": [{"title": "Unit 123.1 - Explanation", "content": "AI explanation: Word order 2
+
+This unit covers the key rules and usage of Word order 2.", "example": "Example sentences for Word order 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 123.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 123.
+2. Example two for Unit 123.", "burmese": "ဥပမာများ"}, {"title": "Unit 123.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 123.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 124 - Still, yet and already", "lessons": [{"title": "Unit 124.1 - Explanation", "content": "AI explanation: Still, yet and already
+
+This unit covers the key rules and usage of Still, yet and already.", "example": "Example sentences for Still, yet and already.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 124.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 124.
+2. Example two for Unit 124.", "burmese": "ဥပမာများ"}, {"title": "Unit 124.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 124.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 125 - Even", "lessons": [{"title": "Unit 125.1 - Explanation", "content": "AI explanation: Even
+
+This unit covers the key rules and usage of Even.", "example": "Example sentences for Even.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 125.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 125.
+2. Example two for Unit 125.", "burmese": "ဥပမာများ"}, {"title": "Unit 125.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 125.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 126 - Although / though / even though", "lessons": [{"title": "Unit 126.1 - Explanation", "content": "AI explanation: Although / though / even though
+
+This unit covers the key rules and usage of Although / though / even though.", "example": "Example sentences for Although / though / even though.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 126.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 126.
+2. Example two for Unit 126.", "burmese": "ဥပမာများ"}, {"title": "Unit 126.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 126.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 127 - In case", "lessons": [{"title": "Unit 127.1 - Explanation", "content": "AI explanation: In case
+
+This unit covers the key rules and usage of In case.", "example": "Example sentences for In case.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 127.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 127.
+2. Example two for Unit 127.", "burmese": "ဥပမာများ"}, {"title": "Unit 127.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 127.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 128 - Unless, as long as, provided", "lessons": [{"title": "Unit 128.1 - Explanation", "content": "AI explanation: Unless, as long as, provided
+
+This unit covers the key rules and usage of Unless, as long as, provided.", "example": "Example sentences for Unless, as long as, provided.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 128.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 128.
+2. Example two for Unit 128.", "burmese": "ဥပမာများ"}, {"title": "Unit 128.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 128.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 129 - As (time and reason)", "lessons": [{"title": "Unit 129.1 - Explanation", "content": "AI explanation: As (time and reason)
+
+This unit covers the key rules and usage of As (time and reason).", "example": "Example sentences for As (time and reason).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 129.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 129.
+2. Example two for Unit 129.", "burmese": "ဥပမာများ"}, {"title": "Unit 129.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 129.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 130 - Like and as", "lessons": [{"title": "Unit 130.1 - Explanation", "content": "AI explanation: Like and as
+
+This unit covers the key rules and usage of Like and as.", "example": "Example sentences for Like and as.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 130.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 130.
+2. Example two for Unit 130.", "burmese": "ဥပမာများ"}, {"title": "Unit 130.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 130.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 131 - Like / as if / as though", "lessons": [{"title": "Unit 131.1 - Explanation", "content": "AI explanation: Like / as if / as though
+
+This unit covers the key rules and usage of Like / as if / as though.", "example": "Example sentences for Like / as if / as though.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 131.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 131.
+2. Example two for Unit 131.", "burmese": "ဥပမာများ"}, {"title": "Unit 131.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 131.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 132 - During and while", "lessons": [{"title": "Unit 132.1 - Explanation", "content": "AI explanation: During and while
+
+This unit covers the key rules and usage of During and while.", "example": "Example sentences for During and while.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 132.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 132.
+2. Example two for Unit 132.", "burmese": "ဥပမာများ"}, {"title": "Unit 132.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 132.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 133 - By and until", "lessons": [{"title": "Unit 133.1 - Explanation", "content": "AI explanation: By and until
+
+This unit covers the key rules and usage of By and until.", "example": "Example sentences for By and until.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 133.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 133.
+2. Example two for Unit 133.", "burmese": "ဥပမာများ"}, {"title": "Unit 133.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 133.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 134 - At/on/in (time)", "lessons": [{"title": "Unit 134.1 - Explanation", "content": "AI explanation: At/on/in (time)
+
+This unit covers the key rules and usage of At/on/in (time).", "example": "Example sentences for At/on/in (time).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 134.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 134.
+2. Example two for Unit 134.", "burmese": "ဥပမာများ"}, {"title": "Unit 134.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 134.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 135 - On time and in time", "lessons": [{"title": "Unit 135.1 - Explanation", "content": "AI explanation: On time and in time
+
+This unit covers the key rules and usage of On time and in time.", "example": "Example sentences for On time and in time.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 135.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 135.
+2. Example two for Unit 135.", "burmese": "ဥပမာများ"}, {"title": "Unit 135.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 135.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 136 - At the end and in the end", "lessons": [{"title": "Unit 136.1 - Explanation", "content": "AI explanation: At the end and in the end
+
+This unit covers the key rules and usage of At the end and in the end.", "example": "Example sentences for At the end and in the end.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 136.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 136.
+2. Example two for Unit 136.", "burmese": "ဥပမာများ"}, {"title": "Unit 136.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 136.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 137 - In/at/on (position) 1", "lessons": [{"title": "Unit 137.1 - Explanation", "content": "AI explanation: In/at/on (position) 1
+
+This unit covers the key rules and usage of In/at/on (position) 1.", "example": "Example sentences for In/at/on (position) 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 137.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 137.
+2. Example two for Unit 137.", "burmese": "ဥပမာများ"}, {"title": "Unit 137.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 137.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 138 - In/at/on (position) 2", "lessons": [{"title": "Unit 138.1 - Explanation", "content": "AI explanation: In/at/on (position) 2
+
+This unit covers the key rules and usage of In/at/on (position) 2.", "example": "Example sentences for In/at/on (position) 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 138.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 138.
+2. Example two for Unit 138.", "burmese": "ဥပမာများ"}, {"title": "Unit 138.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 138.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 139 - In/at/on (position) 3", "lessons": [{"title": "Unit 139.1 - Explanation", "content": "AI explanation: In/at/on (position) 3
+
+This unit covers the key rules and usage of In/at/on (position) 3.", "example": "Example sentences for In/at/on (position) 3.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 139.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 139.
+2. Example two for Unit 139.", "burmese": "ဥပမာများ"}, {"title": "Unit 139.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 139.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 140 - To, at, in and into", "lessons": [{"title": "Unit 140.1 - Explanation", "content": "AI explanation: To, at, in and into
+
+This unit covers the key rules and usage of To, at, in and into.", "example": "Example sentences for To, at, in and into.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 140.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 140.
+2. Example two for Unit 140.", "burmese": "ဥပမာများ"}, {"title": "Unit 140.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 140.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 141 - In/on/at (other uses)", "lessons": [{"title": "Unit 141.1 - Explanation", "content": "AI explanation: In/on/at (other uses)
+
+This unit covers the key rules and usage of In/on/at (other uses).", "example": "Example sentences for In/on/at (other uses).", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 141.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 141.
+2. Example two for Unit 141.", "burmese": "ဥပမာများ"}, {"title": "Unit 141.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 141.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 142 - By", "lessons": [{"title": "Unit 142.1 - Explanation", "content": "AI explanation: By
+
+This unit covers the key rules and usage of By.", "example": "Example sentences for By.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 142.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 142.
+2. Example two for Unit 142.", "burmese": "ဥပမာများ"}, {"title": "Unit 142.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 142.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 143 - Noun + preposition", "lessons": [{"title": "Unit 143.1 - Explanation", "content": "AI explanation: Noun + preposition
+
+This unit covers the key rules and usage of Noun + preposition.", "example": "Example sentences for Noun + preposition.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 143.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 143.
+2. Example two for Unit 143.", "burmese": "ဥပမာများ"}, {"title": "Unit 143.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 143.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 144 - Adjective + preposition 1", "lessons": [{"title": "Unit 144.1 - Explanation", "content": "AI explanation: Adjective + preposition 1
+
+This unit covers the key rules and usage of Adjective + preposition 1.", "example": "Example sentences for Adjective + preposition 1.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 144.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 144.
+2. Example two for Unit 144.", "burmese": "ဥပမာများ"}, {"title": "Unit 144.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 144.", "burmese": "လေ့ကျင့်ခန်း"}]}, {"title": "Unit 145 - Adjective + preposition 2", "lessons": [{"title": "Unit 145.1 - Explanation", "content": "AI explanation: Adjective + preposition 2
+
+This unit covers the key rules and usage of Adjective + preposition 2.", "example": "Example sentences for Adjective + preposition 2.", "burmese": "ရှင်းလင်းချက်"}, {"title": "Unit 145.2 - Examples", "content": "Study the examples and practice making your own sentences.", "example": "1. Example one for Unit 145.
+2. Example two for Unit 145.", "burmese": "ဥပမာများ"}, {"title": "Unit 145.3 - Exercises", "content": "Complete the exercises below.", "example": "Fill in the blanks for Unit 145.", "burmese": "လေ့ကျင့်ခန်း"}]}]}, {"id": "vocabulary", "name": "Vocabulary Class - GiU", "icon": "🏆", "lessons": 718, "progress": 32, "units": []}, {"id": "phrasal", "name": "Phrasal Verb In Use - GiU", "icon": "🧩", "lessons": 989, "progress": 18, "units": []}, {"id": "verbs", "name": "Essential Verbs Program", "icon": "⚡", "lessons": 900, "progress": 0, "units": []}, {"id": "esl", "name": "ESL - English as a Second Language", "icon": "🌍", "lessons": 245, "progress": 0, "units": []}, {"id": "speaking", "name": "Basic Speaking - Top One", "icon": "🎤", "lessons": 60, "progress": 8, "units": []}, {"id": "allinone", "name": "All In One English - Top One", "icon": "📚", "lessons": 30, "progress": 0, "units": []}, {"id": "business", "name": "Business Starter Package", "icon": "💼", "lessons": 40, "progress": 0, "units": [], "locked": true}]};
+
+function renderCourses() {
+  document.getElementById('continueCourses').innerHTML = lessonsData.courses.slice(0,4).map(c => `
+    <div class="course-card" onclick="openCourse('${c.id}')">
+      <div class="icon">${c.icon}</div>
+      <h3>${c.name.split(' - ')[0].replace(' ','<br>')}</h3>
+      <div style="font-size:13px;color:var(--gold);">${c.progress}%</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${c.progress}%"></div></div>
+    </div>
+  `).join('');
+
+  document.getElementById('allCoursesList').innerHTML = lessonsData.courses.map(c => `
+    <div class="course-item" onclick="openCourse('${c.id}')">
+      <div><strong>${c.name}</strong><div class="lessons">${c.lessons} lessons${c.locked?' • Locked':''}</div></div>
+      <span style="color:${c.progress?'var(--gold)':'#666'};">${c.locked?'🔒':c.progress+'%'}</span>
+    </div>
+  `).join('');
+}
+
+function openCourse(id) {
+  const course = lessonsData.courses.find(c => c.id === id);
+  if (!course) return;
+  let html = `<h1 style="font-size:26px;text-align:center;margin:10px 0;">${course.name}</h1>
+    <p style="text-align:center;color:#aaa;margin-bottom:20px;">${course.lessons} lessons</p>`;
+
+  if (course.units && course.units.length) {
+    course.units.forEach(unit => {
+      html += `<div style="font-weight:600;color:var(--gold);margin:16px 0 8px;">${unit.title}</div>`;
+      unit.lessons.forEach((l, idx) => {
+        html += `<div class="course-item" onclick='showLesson(${JSON.stringify(l)})'>
+          <div><strong>${l.title}</strong><div class="lessons">${l.burmese || ''}</div></div>
+          <span>▶</span>
+        </div>`;
+      });
+    });
+  } else {
+    html += `<div style="color:#888;text-align:center;padding:40px 20px;">သင်ခန်းစာတွေ ထည့်ထားခြင်း မရှိသေးပါ။</div>`;
+  }
+  document.getElementById('courseContent').innerHTML = html;
+  showScreen('course');
+}
+
+let currentLesson = null;
+function showLesson(lesson) {
+  currentLesson = lesson;
+  document.getElementById('modalTitle').textContent = lesson.title;
+  document.getElementById('modalBurmese').textContent = lesson.burmese || '';
+  document.getElementById('modalContent').textContent = lesson.content || '';
+  document.getElementById('modalExample').textContent = lesson.example ? 'Example: ' + lesson.example : '';
+  document.getElementById('lessonModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('lessonModal').classList.remove('active');
+}
+
+function speakModal() {
+  if (currentLesson) speak(currentLesson.title + '. ' + (currentLesson.example || ''));
+}
+
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.85;
+    speechSynthesis.speak(u);
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const map = {home:0, courses:1, practice:2, profile:3};
+  if (map[id] !== undefined) document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
+}
+
+renderCourses();
+</script>
+</body>
+</html>
